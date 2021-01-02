@@ -6,12 +6,12 @@
 #include "src/iotc/common/string_buffer.h"
 #include "src/iotc/iotc.h"
 
-#define WIFI_SSID "<ENTER WIFI SSID HERE>"
-#define WIFI_PASSWORD "<ENTER WIFI PASSWORD HERE>"
+#define WIFI_SSID "Casa de gatos"
+#define WIFI_PASSWORD "0512AnacletO"
 
-const char* SCOPE_ID = "<ENTER SCOPE ID HERE>";
-const char* DEVICE_ID = "<ENTER DEVICE ID HERE>";
-const char* DEVICE_KEY = "<ENTER DEVICE primary/secondary KEY HERE>";
+const char* SCOPE_ID = "0ne001EA030";
+const char* DEVICE_ID = "18vrw79vcwh";
+const char* DEVICE_KEY = "RY9LPFIImnKjW/POn2aJZgotDYYGn35B72e97fprXFo=/FNKWjOoT7RveToE8/MCgjN5bZjMZLPCUrll9QeSieIs=";
 
 void on_event(IOTContext ctx, IOTCallbackInfo* callbackInfo);
 #include "src/connection.h"
@@ -39,6 +39,11 @@ void on_event(IOTContext ctx, IOTCallbackInfo* callbackInfo) {
   if (strcmp(callbackInfo->eventName, "Command") == 0) {
     LOG_VERBOSE("- Command name was => %s\r\n", callbackInfo->tag);
   }
+  
+  if (strcmp(callbackInfo->eventName, "SettingsUpdated") == 0) {
+    LOG_VERBOSE("- Setting name was => %s\r\n", callbackInfo->tag);
+  }
+  
 }
 
 void setup() {
@@ -52,23 +57,39 @@ void setup() {
   }
 }
 
+double randomDouble(double minf, double maxf)
+{
+  return minf + random(1UL << 31) * (maxf - minf) / (1UL << 31);  // use 1ULL<<63 for max double values)
+}
+
 void loop() {
   if (isConnected) {
     unsigned long ms = millis();
-    if (ms - lastTick > 10000) {  // send telemetry every 10 seconds
-      char msg[64] = {0};
+    if (ms - lastTick > 15000) {  // send telemetry every 15 seconds
+      char msg[128] = {0};
       int pos = 0, errorCode = 0;
 
       lastTick = ms;
+
       if (loopId++ % 2 == 0) {  // send telemetry
-        pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerX\": %d}",
-                       10 + (rand() % 20));
+        double tem = randomDouble(21.00,25.99);
+        Serial.println(tem);
+        double hum = randomDouble(80.00,99.99);
+        Serial.println(hum);
+        
+        pos = snprintf(msg, sizeof(msg) - 1, "{\"Temp\": %d, \"Humidity\":%d}", 20, 80); 
         errorCode = iotc_send_telemetry(context, msg, pos);
+        
       } else {  // send property
-        pos = snprintf(msg, sizeof(msg) - 1, "{\"dieNumber\":%d}",
-                       1 + (rand() % 5));
-        errorCode = iotc_send_property(context, msg, pos);
+        double lat = randomDouble(-21.99,-21.00);
+        Serial.println(lat);
+        double lon = randomDouble(-69.99,-69.00);
+        Serial.println(lon);
+        
+        pos = snprintf(msg, sizeof(msg) - 1, "{\"Location\": {\"lat\": %d,\"lon\": %d,\"alt\": 0}}", -20, -69); 
+        errorCode = iotc_send_telemetry(context, msg, pos);
       }
+      
       msg[pos] = 0;
 
       if (errorCode != 0) {
